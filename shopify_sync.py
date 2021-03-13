@@ -85,6 +85,18 @@ def main():
     print(df_variants_raw)
     df_variants_raw.to_csv (r'df_variants.csv', index = False, header=True)
 
+    #Consultar BD intermedia de size &b SIZECOLORS_ENVwith open('./settings.json', 'r') as file:
+    with open('./settings.json', 'r') as file:
+        config = json.load(file)
+        file.close()
+
+    sqlconn=Connection(host=config[Config.SIZECOLORS_ENV]['HOST'],db=config[Config.SIZECOLORS_ENV]['DATABASE'],usr=config[Config.SIZECOLORS_ENV]['USER'],pwd=config[Config.SIZECOLORS_ENV]['PWD'])
+    print("Conexion sql abierta")
+    qry="select (a.codigo+'-'+b.talla) as sku,b.Cantidad as Qty,ROUND(a.precio - (((a.desc1 * a.precio)/100) + (a.desc2 * (a.precio - ((a.desc1 * a.precio)/100))/100)),0,1) as Price,a.estilo,a.color_base,a.color,a.concepto,a.linea,a.temporada from articulos a JOIN existencias b ON a.codigo=b.codigo"
+    #print(qry)
+    df_web_lavirs=pd.read_sql_query(qry,sqlconn.conn)
+    df_web_lavirs.to_csv (r'df_sizecolors.csv', index = False, header=True)
+
 
 if __name__ == '__main__':
     main()
