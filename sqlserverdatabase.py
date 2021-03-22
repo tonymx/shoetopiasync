@@ -8,7 +8,8 @@ class Connection():
     PWD=None
     conn=None
     #DRIVER="{ODBC Driver 17 for SQL Server}"
-    DRIVER="{SQL Server}"
+    DRIVER="{ODBC Driver 17 for SQL Server}"
+    #DRIVER="{SQL Server}"
 
     def __init__(self,host,db,usr,pwd):
         self.HOST=host
