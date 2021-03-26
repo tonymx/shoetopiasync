@@ -149,7 +149,7 @@ def main():
             variant.price = sizecolors_price
             variant.save()
 
-            print("Se procesaron todas las diferencias!")
+        print("Process Sucessful!!")
 
             # if sizecolors_price!=shopify_price:
             #     sku=getattr(row,"sku")
