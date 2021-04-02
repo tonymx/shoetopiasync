@@ -19,18 +19,22 @@ def get_variants_shopify(logger):
     page_v = 1
     total_intentos = 5
     num_intentos = 0
+    total_records=0
     try:
         total_variantes = shopify.Variant.count()
-        #print(total_variantes)
+        print(f"total_variantes={total_variantes}")
         count_max_request = (total_variantes // Config.RESOURCES_PER_PAGE) + 2
         print(f"count_max_request = {count_max_request}")
-        while page_v <= count_max_request:
+        #while page_v <= count_max_request:
+        while total_records < total_variantes:
             print(f"page_v={page_v}")
             print(f"lastid={lastid}")
 
             try:
                 #variants = shopify.Variant.find(page=page_v, limit=Config.RESOURCES_PER_PAGE)
                 variants = shopify.Variant.find(since_id=lastid)
+                # esperar 10 segundos antes de la siguiente llamada
+                time.sleep(Config.SLEEP)
                 if variants:
                     num_intentos = 0
                     page_v += 1
@@ -38,11 +42,16 @@ def get_variants_shopify(logger):
                         result_variants.append([v.sku, v.id, v.inventory_quantity, v.price,dateutil.parser.parse(v.updated_at,ignoretz=True),v.inventory_item_id])
                         #print(result_variants)
                     lastid=v.id
+                    total_records=len(result_variants)
+                    print(f"total de registros acumulados = {total_records}")
                 else:
                     break
             except Exception as ex:
                 print(ex)
                 num_intentos += 1
+                print(f"num_intentos={num_intentos}")
+                print(f"total_intentos={total_intentos}")
+
                 if num_intentos >= total_intentos:
                     logger.error("Reach the maximum attempts shopify request for page: %s. Variants incomplete",page_v)
                     raise Exception("Reach the maximum attempts shopify request for page")
@@ -52,15 +61,18 @@ def get_variants_shopify(logger):
 
     return result_variants
 
-def update_inventory_shopify(invitemid,qty):
+def update_inventory_shopify(logger,invitemid,qty):
     try:
         levels=shopify.InventoryLevel.find(inventory_item_ids=invitemid)
+        # esperar 10 segundos antes de la siguiente llamada
+        time.sleep(Config.SLEEP)
         #locations=shopify.Location.find(inventory_item_ids=invitemid)
         #print(levels)
         for l in levels:
             #print(l.inventory_item_id,l.location_id,l.available,l.updated_at)
             #Updating inventory qty, missing update price
             inventory_level = shopify.InventoryLevel.set(l.location_id, l.inventory_item_id, qty)
+
             #print(f"new inventoryQty updated={inventory_level.available}")
     except Exception as ex:
         logger.error("uncaught exception: %s", ex)
@@ -135,10 +147,12 @@ def main():
             inventoryitemid=getattr(row,"inventory_item_id")
             newqty=getattr(row,"Qty")
             inventoryqty=getattr(row,"inventory_quantity")
-            print(f"Actualizando inventory_item_id={inventoryitemid},Shopify={inventoryqty} Size&ColorsQty={newqty}")
-            update_inventory_shopify(inventoryitemid,newqty)
+            sku=getattr(row,"sku")
+            print(f"Actualizando sku= {sku},inventory_item_id={inventoryitemid},Shopify={inventoryqty} Size&ColorsQty={newqty}")
+            update_inventory_shopify(logger,inventoryitemid,newqty)
 
         print("Procesando diferencias en precio")
+
         for row in df_diff_price.itertuples(index = True, name ='DiferenciasPrices'):
             sizecolors_price=float(getattr(row, "Price"))
             shopify_price=float(getattr(row, "price"))

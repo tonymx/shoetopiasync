@@ -1,4 +1,5 @@
 import os
+import json
 
 # basedir = os.path.abspath(os.path.dirname(__file__))
 # basedir=basedir+'\db'
@@ -22,3 +23,8 @@ class Config(object):
     # GOOGLE_REFRESH_TOKEN = os.environ.get('GOOGLE_REFRESH_TOKEN')
     # RECIPIENTS = ['consultormid@gmail.com']
     # SENDER_EMAIL = os.environ.get('SENDER_EMAIL') or 'info.ingenieux@gmail.com'
+    with open('./settings.json', 'r') as file:
+        config = json.load(file)
+        file.close()
+
+    SLEEP= int(config[SIZECOLORS_ENV]['SLEEP'])
